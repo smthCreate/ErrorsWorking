@@ -12,6 +12,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Scanner;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Program {
     public static void main(String[] args) {
@@ -22,8 +24,8 @@ public class Program {
         String input  = inputing();
         String[] splString = input.split(" ");
         if (splString.length==6){
-            String FIO = splString[0]+" "+splString[1]+" "+splString[2];
             try {
+                String FIO = fioMaker(new String[]{splString[0],splString[1],splString[2]});
                 Date date = convertingDate(splString[3]);
                 Long number = Long.parseLong(splString[4]);
                 if (splString[5].equals("f")||splString[5].equals("m")){
@@ -51,7 +53,11 @@ public class Program {
                 System.out.println("Date is wrong: "+e.getMessage());
                 System.out.println("New registration session");
                 registration();
-            } catch (NumberFormatException e){
+            } catch (NamingErrorException e){
+                System.out.println("FIO is wrong!");
+                System.out.println("New registration session");
+                registration();
+            }catch (NumberFormatException e){
                 System.out.println("Number is wrong: "+e.getClass().getSimpleName());
                 System.out.println("New registration session");
                 registration();
@@ -66,16 +72,27 @@ public class Program {
 
     }
 
+    private static String fioMaker(String[] elements) throws NamingErrorException {
+        for (String element:
+             elements) {
+            Pattern p = Pattern.compile("[^a-z0-9 ]()[!@#$%&*()_+=|<>?{}\\\\[\\\\]~-]", Pattern.CASE_INSENSITIVE);
+            Matcher m = p.matcher(element);
+            boolean b = m.find();
+            if (b){
+                throw new NamingErrorException("");
+            }
+        }
+        return elements[0]+" "+elements[1]+" "+elements[2];
+    }
+
     private static void creatinFile(String path, String content) {
         File file = new File(path);
-        try {
+        try (FileWriter writer = new FileWriter(file)) {
             if (file.createNewFile()){
                 System.out.println("File was created: "+file.getAbsolutePath());
             }
-            FileWriter writer = new FileWriter(file);
             writer.write(content);
             writer.flush();
-            writer.close();
         } catch (IOException e){
             System.out.println("Exception: "+e.getClass().getSimpleName());
             String resAns = inputingMes("Do you want to retry?(Y/N)");
@@ -88,23 +105,13 @@ public class Program {
 
     private static void appendingIntoFile(String path, String content) {
         File file  = new File(path);
-        FileWriter fileWriter = null;
-        try {
-            fileWriter = new FileWriter(file,true);
+        try (FileWriter fileWriter = new FileWriter(file,true);) {
             fileWriter.append("\n"+content);
         } catch (IOException e){
             System.out.println("Exception: "+e.getClass().getSimpleName());
             String resAns = inputingMes("Do you want to retry?(Y/N)");
             if (resAns.equalsIgnoreCase("y")){
                 registration();
-            }
-        }finally {
-            try {
-                fileWriter.close();
-            } catch (IOException e){
-                System.out.println("File was not closed: "+e.getClass().getSimpleName());
-            } catch (NullPointerException e){
-                System.out.println("FileWriter was not created: "+e.getClass().getSimpleName());
             }
         }
     }
